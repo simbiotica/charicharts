@@ -753,8 +753,17 @@ var p_pie_inner_arrow = PClass.extend({
 
     // Move arrow to first piece onload
     setTimeout(function() {
-      var d = self.pie.path.data()[0];
-      self.moveToId(d.data.id);
+      var data = self.pie.path.data();
+      var firstPiece;
+
+      for (var i = 0; i < data.length; i++) {
+        if (data[i].value > 0) {
+          firstPiece = data[i];
+          break;
+        }
+      }
+
+      self.moveToId(firstPiece.data.id);
     }, 0);
 
     return {
@@ -803,10 +812,16 @@ var p_pie_inner_arrow = PClass.extend({
         angle = h_getAngle.apply(this, coords),
         rotation = angle * (180/Math.PI);
 
-    this.innerArrow
-      .transition()
-      .duration(200)
-      .attr('transform', 'translate(0) rotate('+ rotation +')');
+    if (d.value > 0) {
+      this.innerArrow
+        .attr('visibility', 'visible')
+        .transition()
+        .duration(200)
+        .attr('transform', 'translate(0) rotate('+ rotation +')');
+    } else {
+      this.innerArrow
+        .attr('visibility', 'hidden');
+    }
 
     this._current = d;
   },
@@ -847,19 +862,21 @@ var p_pie = PClass.extend({
 
   initialize: function() {
     var dataSum = d3.sum(this.data, function(d) {
-      return d.value;
+      return d.value >= 0 ? d.value : 0;
     });
 
     // If the sum is 0, call onNoData callback
     // and stop rendering...
     if (dataSum <= 0) {
-      this.opts.onNoData();
+      this.opts.onNoData && this.opts.onNoData();
       return;
     }
 
     // Pie layout
     this.pie = d3.layout.pie()
-      .value(function(d) {return d.value;})
+      .value(function(d) {
+        return d.value >= 0 ? d.value : 0;
+      })
       .sort(null);
 
     // Pie arc
@@ -1387,10 +1404,9 @@ var p_series = PClass.extend({
    * Render bar serie. By default it renders bars stacked.
    */
   _renderBarSerie: function(serie) {
-    var self = this,
-        grouped = serie.grouped,
-        // TODO 12 not reasonable. how can we define it?
-        barWidth =  12/(!grouped ? serie.data.length : 1);
+    var self = this;
+    var grouped = serie.grouped;
+    var barWidth = Math.floor(this._getBarWidth(serie));
 
     // ID optional
     serie.id = serie.id || parseInt(_.uniqueId());
@@ -1475,6 +1491,35 @@ var p_series = PClass.extend({
     path.transition()
       .duration(200)
       .style('opacity', path.attr('active'));
+  },
+
+  /**
+   * For bar series, get the width of them.
+   * 
+   * @param  {Object}  serie
+   * @return {Integer} Bar width
+   */
+  _getBarWidth: function(serie) {
+    var maxBarWidth = 12, barWidth, serieLength;
+
+    // Stacked bar
+    if (serie.grouped) {
+      serieLength = d3.max(_.map(serie.data, function(d) {
+        return d.values.length;
+      }));
+
+      barWidth = (this.opts.width / serieLength) - 4;
+    // Side by side
+    } else {
+      barWidth = maxBarWidth/serie.data.length;
+    }
+
+    // Check the barWidth is not bigger than the maximun permited
+    if (barWidth > maxBarWidth) {
+      barWidth = maxBarWidth;
+    }
+
+    return barWidth;
   }
 
 });
