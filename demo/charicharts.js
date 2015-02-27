@@ -80,7 +80,7 @@ function h_getLocale(locale) {
       'shortDays': ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
       'months': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
       'shortMonths': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-      'nodata': ['No data available']
+      'nodata': ['No data available.']
     },
     'es': {
       'decimal': ',',
@@ -95,10 +95,11 @@ function h_getLocale(locale) {
       'shortDays': ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'],
       'months': ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
       'shortMonths': ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-      'nodata': ['No hay datos disponibles']
+      'nodata': ['No hay datos disponibles.']
     }
   })[locale || 'en'];
 }
+
 /* Simple JavaScript Inheritance
  * By John Resig http://ejohn.org/
  * MIT Licensed.
@@ -321,11 +322,13 @@ var p_axes = PClass.extend({
      * Update the axes when the scales have changed.
      */
     'Scale/updated': function() {
+      if (!this._status) {return;}
       _.each(this._status.axes, this._updateAxis, this);
     }
   }],
 
   initialize: function() {
+    if (!this._$scope.dataAvailable) {return;}
     this._status = {
       axes: this._initAxesModel()
     };
@@ -1046,10 +1049,13 @@ var p_scale = PClass.extend({
       }
     };
 
+    this.dataAvailable = true;
+
     this._updateScales();
     return {
       scale: this._status.scale,
-      scaleUnits: this._status.scaleUnits
+      scaleUnits: this._status.scaleUnits,
+      dataAvailable: this.dataAvailable
     };
   },
 
@@ -1065,7 +1071,7 @@ var p_scale = PClass.extend({
 
   _updateScale: function(position, opt_minExtent) {
     var opts = this.opts[position.replace(/\d/, '') + 'axis'];
-    var domain = this.opts[position+'axis'].domain ? this.opts.xaxis.domain : 
+    var domain = this.opts[position+'axis'].domain ? this.opts.xaxis.domain :
       this._getExtent(position, opts.fit, opt_minExtent);
     var range = position === 'x' ? [0, this.opts.width] : [this.opts.height, 0];
 
@@ -1205,15 +1211,20 @@ var p_scale = PClass.extend({
     if (!dataAvailable) {
       this.$svg.append('text')
         .attr('text-achor', 'middle')
-        .attr('alignment-baseline', 'middle')
-        .attr('x', '40%')
-        .attr('y', '40%')
+        // .attr('alignment-baseline', 'middle')
+        .attr('x', this.opts.width/2)
+        .attr('y', this.opts.height/2 - 10)
+        .attr('text-anchor', 'middle')
         .attr('font-size', '18px')
         .text(h_getLocale(this.opts.locale)['nodata']);
+        this.dataAvailable = false;
+
+      this.$svg.node().parentNode.style.background = '#eee';
     }
   }
 
 });
+
 var p_series = PClass.extend({
 
   deps: [
@@ -1745,6 +1756,7 @@ var p_trail = PClass.extend({
 
   _subscriptions: [{
     'Scale/updated': function() {
+      if (!this._status) {return;}
       if (this._status.x) {
         this._moveToValue(this._status.xvalue);
       }
@@ -1752,6 +1764,8 @@ var p_trail = PClass.extend({
   }],
 
   initialize: function() {
+    if (!this._$scope.dataAvailable) {return;}
+
     var self = this;
     if (!this.opts.trail.enabled) {return;}
     this._status = {xvalue: null, x: null};

@@ -7,10 +7,6 @@
     font-family: 'Helvetica', sans-serif;
     font-size: 12px;
   }
-  svg,
-  body {
-    background: #262626;
-  }
   text {
     fill: #999;
   }
@@ -38,9 +34,7 @@
 <script>
 
 var color = d3.scale.category10()
-    random = d3.random.normal(0, 1),
-    data1 = getData(23)
-    data2 = getData(23);
+    random = d3.random.normal(0, 1);
 
 // setNull(data1, 4, 6, 14, 15, 16);
 // setNull(data2, 0, 1, 5, 7);
@@ -48,13 +42,13 @@ var color = d3.scale.category10()
 var data = [{
   id: 1004,
   type: 'line',
-  values: data1,
+  values: [],
   interpolation: 'basis',
   color: '#555'
 },{
   id: 1005,
   type: 'line',
-  values: data2,
+  values: [],
   dots: true,
   interpolation: 'step',
   color: color(0)
@@ -87,60 +81,5 @@ var chart = new Charicharts.Chart(options, data);
 chart.on('Trail/moved', function(data, x) {
   // console.log(data, x);
 });
-
-// setInterval(function() {
-//   update(data1);
-//   update(data2);
-// }, 500);
-
-setTimeout(function() {
-  var data = [{
-    id: 1004,
-    type: 'line',
-    values: data1,
-    interpolation: 'basis',
-    color: '#555'
-  },{
-    id: 1005,
-    type: 'line',
-    values: data2,
-    dots: true,
-    interpolation: 'step',
-    color: color(0)
-  }];
-
-  console.log(chart);
-  chart.series.updateAll(data);
-
-  // chart.series.removeAll()
-  // chart.series[0].update(values)
-  // chart.series[0].remove()
-}, 1000);
-
-function update(data) {
-  var toNull = _.random(1, 10) <= 3;
-  data.push(randomItem(data[data.length-1].x + 1, toNull));
-  data.shift();
-  chart.series.update();
-}
-
-function randomItem(i, toNull) {
-  return {
-    x: i,
-    y: toNull ?  Math.abs(random()) : Math.abs(random()),
-  };
-}
-
-function getData(n) {
-  return d3.range(n).map(function(x) {
-    return randomItem(x);
-  });
-}
-
-function setNull(arr) {
-  for (var i = 1; i < arguments.length; i++) {
-    arr[arguments[i]].y = null
-  };
-}
 
 </script>

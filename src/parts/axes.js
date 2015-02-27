@@ -15,11 +15,13 @@ var p_axes = PClass.extend({
      * Update the axes when the scales have changed.
      */
     'Scale/updated': function() {
+      if (!this._status) {return;}
       _.each(this._status.axes, this._updateAxis, this);
     }
   }],
 
   initialize: function() {
+    if (!this._$scope.dataAvailable) {return;}
     this._status = {
       axes: this._initAxesModel()
     };

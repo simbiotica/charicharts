@@ -46,10 +46,13 @@ var p_scale = PClass.extend({
       }
     };
 
+    this.dataAvailable = true;
+
     this._updateScales();
     return {
       scale: this._status.scale,
-      scaleUnits: this._status.scaleUnits
+      scaleUnits: this._status.scaleUnits,
+      dataAvailable: this.dataAvailable
     };
   },
 
@@ -65,7 +68,7 @@ var p_scale = PClass.extend({
 
   _updateScale: function(position, opt_minExtent) {
     var opts = this.opts[position.replace(/\d/, '') + 'axis'];
-    var domain = this.opts[position+'axis'].domain ? this.opts.xaxis.domain : 
+    var domain = this.opts[position+'axis'].domain ? this.opts.xaxis.domain :
       this._getExtent(position, opts.fit, opt_minExtent);
     var range = position === 'x' ? [0, this.opts.width] : [this.opts.height, 0];
 
@@ -205,11 +208,15 @@ var p_scale = PClass.extend({
     if (!dataAvailable) {
       this.$svg.append('text')
         .attr('text-achor', 'middle')
-        .attr('alignment-baseline', 'middle')
-        .attr('x', '40%')
-        .attr('y', '40%')
+        // .attr('alignment-baseline', 'middle')
+        .attr('x', this.opts.width/2)
+        .attr('y', this.opts.height/2 - 10)
+        .attr('text-anchor', 'middle')
         .attr('font-size', '18px')
         .text(h_getLocale(this.opts.locale)['nodata']);
+        this.dataAvailable = false;
+
+      this.$svg.node().parentNode.style.background = '#eee';
     }
   }
 

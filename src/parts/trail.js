@@ -6,6 +6,7 @@ var p_trail = PClass.extend({
 
   _subscriptions: [{
     'Scale/updated': function() {
+      if (!this._status) {return;}
       if (this._status.x) {
         this._moveToValue(this._status.xvalue);
       }
@@ -13,6 +14,8 @@ var p_trail = PClass.extend({
   }],
 
   initialize: function() {
+    if (!this._$scope.dataAvailable) {return;}
+
     var self = this;
     if (!this.opts.trail.enabled) {return;}
     this._status = {xvalue: null, x: null};
