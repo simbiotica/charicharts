@@ -1212,7 +1212,7 @@ var p_scale = PClass.extend({
       this.$svg.append('text')
         .attr('text-achor', 'middle')
         // .attr('alignment-baseline', 'middle')
-        .attr('x', this.opts.width/2 - 6)
+        .attr('x', this.opts.width/2 - 8)
         .attr('y', this.opts.height/2 - 10)
         .attr('text-anchor', 'middle')
         .style('fill', '#777')
@@ -1220,7 +1220,7 @@ var p_scale = PClass.extend({
         .text(h_getLocale(this.opts.locale)['nodata']);
         this.dataAvailable = false;
 
-      this.$svg.node().parentNode.style.background = '#eee';
+      this.$svg.node().parentNode.style.background = '#f7f7f7';
     }
   }
 
