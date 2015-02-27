@@ -209,9 +209,10 @@ var p_scale = PClass.extend({
       this.$svg.append('text')
         .attr('text-achor', 'middle')
         // .attr('alignment-baseline', 'middle')
-        .attr('x', this.opts.width/2)
+        .attr('x', this.opts.width/2 - 6)
         .attr('y', this.opts.height/2 - 10)
         .attr('text-anchor', 'middle')
+        .style('fill', '#777')
         .attr('font-size', '18px')
         .text(h_getLocale(this.opts.locale)['nodata']);
         this.dataAvailable = false;
