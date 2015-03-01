@@ -409,8 +409,49 @@ var p_axes = PClass.extend({
       .tickSize(this.opts.xaxis.bottom.tickLines ? 14 : 5, 0)
       .tickFormat(this.opts.xaxis.bottom.tickFormat || tickFormat);
 
-    if (this.opts.xaxis.ticks) {
-      model.axis.ticks.apply(model.axis, this.opts.xaxis.ticks);
+    var step, steptmp;
+    var domain = this.scale.x.domain();
+    var diff = (domain[1].getTime() - domain[0].getTime())/1000;
+    step = steptmp = diff/6;
+
+    var years = Math.floor(steptmp/31536000);
+    var months = Math.floor(steptmp/2628000);
+    var days = Math.floor(steptmp/86400);
+    var hours = Math.floor(steptmp/3600)%24;
+    var minutes = Math.floor(steptmp/60)%60;
+    var seconds = steptmp % 60;
+
+    var ticks = this.opts.xaxis.ticks;
+    var time;
+    var amount;
+
+    if (!ticks) {
+      if (years >= 1) {
+        time = 'year';
+        amount = (years - years%2) || 1;
+      } else if (months >= 1) {
+        time = 'months';
+        amount = (months - months%2) || 1;
+      } else if (days >= 1) {
+        time = 'days';
+        amount = (days - days%2) || 1;
+      } else if (hours >= 1) {
+        time = 'hours';
+        amount = (hours - hours%2) || 1;
+      } else if (minutes >= 1) {
+        time = 'minutes';
+        amount = (minutes - minutes%2);
+        amount = amount + 30/2 - (amount+30/2) % 30;
+        if (amount === 0) {amount = 30;}
+      } else if (seconds >= 1) {
+        time = 'seconds';
+        amount = 60;
+      }
+    }
+    if (amount === 0) {amount=1;}
+
+    if (time) {
+      model.axis.ticks.apply(model.axis, [d3.time[time], amount]);
     }
 
     // Render axis
@@ -1212,8 +1253,8 @@ var p_scale = PClass.extend({
       this.$svg.append('text')
         .attr('text-achor', 'middle')
         // .attr('alignment-baseline', 'middle')
-        .attr('x', this.opts.width/2 - 8)
-        .attr('y', this.opts.height/2 - 10)
+        .attr('x', this.opts.width/2 - 10)
+        .attr('y', this.opts.height/2 - 8)
         .attr('text-anchor', 'middle')
         .style('fill', '#777')
         .attr('font-size', '18px')
@@ -1813,7 +1854,7 @@ var p_trail = PClass.extend({
 
     this.bisector = d3.bisector(function(d) {
       return d.x;
-    }).left;
+    }).right;
 
     // Append slider zone
     this.sliderZone = this.$svg.append('g')
@@ -1892,13 +1933,16 @@ var p_trail = PClass.extend({
       var value;
 
       if (serie.type === 'line') {
-        var index = self.bisector(serie.values, xvalue);
-        if (index < 0) {index=0;}
+        var indexAfter = self.bisector(serie.values, xvalue);
 
-        value = serie.values[index];
-        if (!value) {
+        if (serie.values.length === indexAfter) {
           value = {x: null, y: null};
+        } else {
+          var index = indexAfter - 1;
+          if (index < 0) {index=0;}
+          value = serie.values[index];
         }
+        if (!value) {value = {x: null, y: null};}
         return _.extend({}, value, {id: serie.id}, _.omit(serie, 'values', 'path'));
       } else if (serie.type === 'bar' || serie.type === 'area') {
         return _.map(serie.data, function(d) {

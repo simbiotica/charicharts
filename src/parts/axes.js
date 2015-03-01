@@ -101,10 +101,11 @@ var p_axes = PClass.extend({
       .orient('bottom')
       .tickSize(this.opts.xaxis.bottom.tickLines ? 14 : 5, 0)
       .tickFormat(this.opts.xaxis.bottom.tickFormat || tickFormat);
-    
+
+    var step, steptmp;
     var domain = this.scale.x.domain();
     var diff = (domain[1].getTime() - domain[0].getTime())/1000;
-    var step = steptmp = diff/6;
+    step = steptmp = diff/6;
 
     var years = Math.floor(steptmp/31536000);
     var months = Math.floor(steptmp/2628000);
