@@ -209,7 +209,8 @@ var p_axes = PClass.extend({
       .tickFormat(function(d) {
         if (self.scale.y2) {
           var px = self.scale.y(d);
-          var value = Math.round(self.scale.y2.invert(px)).toLocaleString();
+          var value = Math.round(self.scale.y2.invert(px));
+          value = _.isNaN(value) ? '' : value.toLocaleString();
           return value;
         }
         return tickFormat(d);

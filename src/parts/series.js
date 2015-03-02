@@ -63,7 +63,7 @@ var p_series = PClass.extend({
                 y: last.y,
                 x: newX,
                 fake: true
-              }
+              };
               values.push(fake);
             }
           }
