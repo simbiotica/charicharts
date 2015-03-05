@@ -408,6 +408,10 @@ var p_axes = PClass.extend({
       .orient('bottom')
       .tickSize(this.opts.xaxis.bottom.tickLines ? 14 : 5, 0)
       .tickFormat(this.opts.xaxis.bottom.tickFormat || tickFormat);
+<<<<<<< HEAD
+=======
+
+>>>>>>> e2568319bb4e7cb6732815d36610a72a5c3b6b78
     var ticks = this.opts.xaxis.ticks;
 
     if (ticks) {
@@ -1076,8 +1080,8 @@ var p_scale = PClass.extend({
       this.trigger('Scale/updated', []);
     },
 
-    'Scale/update': function(opt_minExtent) {
-      this._updateScales(opt_minExtent);
+    'Scale/update': function(options) {
+      this._updateScales(options);
       this.trigger('Scale/updated', []);
     }
 
@@ -1107,20 +1111,24 @@ var p_scale = PClass.extend({
     };
   },
 
-  _updateScales: function(opt_minExtent) {
-    opt_minExtent = opt_minExtent || {};
+  _updateScales: function(options) {
+    options = options || {};
     this._setFlattenedData();
-    this._status.scale.x = this._updateScale('x', opt_minExtent.x);
-    this._status.scale.y = this._updateScale('y', opt_minExtent.y);
+    this._status.scale.x = this._updateScale('x', options);
+    this._status.scale.y = this._updateScale('y', options);
     if (this._status.scaleUnits.y2) {
-      this._status.scale.y2 = this._updateScale('y2', opt_minExtent.y2);
+      this._status.scale.y2 = this._updateScale('y2', options);
     }
   },
 
-  _updateScale: function(position, opt_minExtent) {
+  _updateScale: function(position, options) {
     var opts = this.opts[position.replace(/\d/, '') + 'axis'];
     var domain = this.opts[position+'axis'].domain ? this.opts.xaxis.domain :
+<<<<<<< HEAD
       this._getExtent(position, opts.fit, opt_minExtent);
+=======
+      this._getExtent(position, opts.fit, options);
+>>>>>>> e2568319bb4e7cb6732815d36610a72a5c3b6b78
     var range = position === 'x' ? [0, this.opts.width] : [this.opts.height, 0];
 
     return this._d3Scales[opts.scale]()
@@ -1129,7 +1137,8 @@ var p_scale = PClass.extend({
       // .nice(); // Extends the domain so that it starts and ends on nice round values.
   },
 
-  _getExtent: function(position, fit, opt_minExtent) {
+  _getExtent: function(position, fit, options) {
+    options = options || {};
     var extent;
     // x axes uses all data
     if (position === 'x') {
@@ -1146,9 +1155,10 @@ var p_scale = PClass.extend({
     }
 
     // Fix to min extent
-    if (opt_minExtent) {
-      var min = d3.min([extent[0], opt_minExtent[0]]);
-      var max = d3.max([extent[1], opt_minExtent[1]]);
+    var opt = options[position];
+    if (opt && opt.extent) {
+      var min = opt.min ? d3.min([extent[0], opt.extent[0]]) : opt.extent[0];
+      var max = opt.min ? d3.max([extent[1], opt.extent[1]]) : opt.extent[1];
       extent = [min, max];
     }
 
@@ -1159,6 +1169,8 @@ var p_scale = PClass.extend({
     if (extDiff <= 0) {
       valDiff = 1;
     }
+
+    if (opt && !opt.min) {return extent;}
 
     if (position === 'y' && fit) {
       extent[0] = extent[0] - valDiff;
@@ -1557,7 +1569,9 @@ var p_series = PClass.extend({
       data = stack(series.data);
 
       area
-        .y0(function(d) { return yScale(d.y0); })
+        .y0(function(d) {
+            return yScale(d.y0);
+        })
         .y1(function(d) {
           return yScale(d.y + d.y0);
         });
@@ -1570,11 +1584,24 @@ var p_series = PClass.extend({
     }
 
     // Fit to new scale
-    var extent = d3.extent(series.data[series.data.length - 1].values, function(d) {
+    var t = new Date().getTime();
+    var allvalues = _.flatten(_.map(series.data, function(d) {
+      return d.values;
+    }));
+    var min = d3.min(allvalues, function(d) {
+      return d.y0;
+    });
+    var max = d3.max(allvalues, function(d) {
       return d.y0 + d.y;
     });
+    var extent = [min, max];
 
-    this.trigger('Scale/update', [{ y: extent }]);
+    this.trigger('Scale/update', [{
+      y: {
+        extent: extent,
+        min: false
+      }
+    }]);
 
     // ID optional
     _.each(series.data, function(serie) {
