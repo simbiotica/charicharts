@@ -262,8 +262,12 @@ var p_series = PClass.extend({
   _renderStackedAreaSerie: function(series) {
     var self = this;
     var data = series.data;
+    var allvalues = _.flatten(_.map(series.data, function(d) {
+      return d.values;
+    }));
     // Let use the scale of any serie
     var yScale;
+    var min, max;
 
     // ID optional
     // _.each(series.data, function(serie) {
@@ -282,38 +286,47 @@ var p_series = PClass.extend({
 
       area
         .y0(function(d) {
-            return yScale(d.y0);
+          return yScale(d.y0);
         })
         .y1(function(d) {
           return yScale(d.y + d.y0);
         });
+      min = d3.min(allvalues, function(d) {
+        return d.y0;
+      });
+      max = d3.max(allvalues, function(d) {
+        return d.y0 + d.y;
+      });
+
+      // Fit to new scale
+      var extent = [min, max];
+      this.trigger('Scale/update', [{
+        y: {
+          extent: extent,
+          min: false
+        }
+      }]);
+
     } else {
       _.each(series.data, this._renderLineSerie, this);
 
       area
         .y0(function(d) { return yScale(0); })
         .y1(function(d) { return yScale(d.y); });
+
+      var max = d3.max(allvalues, function(d) {
+        return d.y;
+      });
+
+      // Fit to new scale
+      var extent = [0, max];
+      this.trigger('Scale/update', [{
+        y: {
+          extent: extent,
+          min: true
+        }
+      }]);
     }
-
-    // Fit to new scale
-    var t = new Date().getTime();
-    var allvalues = _.flatten(_.map(series.data, function(d) {
-      return d.values;
-    }));
-    var min = d3.min(allvalues, function(d) {
-      return d.y0;
-    });
-    var max = d3.max(allvalues, function(d) {
-      return d.y0 + d.y;
-    });
-    var extent = [min, max];
-
-    this.trigger('Scale/update', [{
-      y: {
-        extent: extent,
-        min: false
-      }
-    }]);
 
     // ID optional
     _.each(series.data, function(serie) {
