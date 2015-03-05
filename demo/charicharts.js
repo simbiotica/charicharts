@@ -408,10 +408,6 @@ var p_axes = PClass.extend({
       .orient('bottom')
       .tickSize(this.opts.xaxis.bottom.tickLines ? 14 : 5, 0)
       .tickFormat(this.opts.xaxis.bottom.tickFormat || tickFormat);
-<<<<<<< HEAD
-=======
-
->>>>>>> e2568319bb4e7cb6732815d36610a72a5c3b6b78
     var ticks = this.opts.xaxis.ticks;
 
     if (ticks) {
@@ -1124,11 +1120,7 @@ var p_scale = PClass.extend({
   _updateScale: function(position, options) {
     var opts = this.opts[position.replace(/\d/, '') + 'axis'];
     var domain = this.opts[position+'axis'].domain ? this.opts.xaxis.domain :
-<<<<<<< HEAD
-      this._getExtent(position, opts.fit, opt_minExtent);
-=======
-      this._getExtent(position, opts.fit, options);
->>>>>>> e2568319bb4e7cb6732815d36610a72a5c3b6b78
+    this._getExtent(position, opts.fit, options);
     var range = position === 'x' ? [0, this.opts.width] : [this.opts.height, 0];
 
     return this._d3Scales[opts.scale]()
