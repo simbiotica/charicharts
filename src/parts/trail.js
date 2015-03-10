@@ -145,7 +145,7 @@ var p_trail = PClass.extend({
 
         if (serie.values.length === indexAfter) {
           value = {x: null, y: null};
-        } else {
+        } else if (indexAfter > 0) {
           var index = indexAfter - 1;
           if (index < 0) {index=0;}
           value = serie.values[index];
