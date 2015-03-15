@@ -414,49 +414,96 @@ var p_axes = PClass.extend({
       model.axis.ticks.apply(model.axis, ticks);
     } else {
       var domain = this.scale.x.domain();
-      var start = domain[0].getTime()/1000;
-      var end = domain[1].getTime()/1000;
+      var start = domain[0].getTime();
+      var end = domain[1].getTime();
       var diff = end - start;
-      var step = diff/7;
-      // console.log('step', step/60/60/24, 'dias')
-
+      var minPxStep = 100;
+      var width = this.opts.fullWidth;
+      var maxValues = Math.ceil(width/minPxStep)+1;
       var tickValues = [];
-      var accdiff = 0;
+      var ranges = ['year', 'month', 'day', 'hour', 'minutes'];
 
-      var nearest = function(epoch) {
-        var realDate = moment(epoch);
+      var startDate = moment(start);
+      var endDate = moment(end);
 
-        d = moment(epoch).startOf('year');
-        if (Math.abs(d.diff(realDate, 'seconds')) <= step/2) {accdiff += realDate.diff(d,'miliseconds'); return d.toDate();}
-        d = moment(epoch).startOf('month');
-        if (Math.abs(d.diff(realDate, 'seconds')) <= step/2) {accdiff += realDate.diff(d,'miliseconds'); return d.toDate();}
-        d = moment(epoch).startOf('quarter');
-        if (Math.abs(d.diff(realDate, 'seconds')) <= step/2) {accdiff += realDate.diff(d,'miliseconds'); return d.toDate();}
-        d = moment(epoch).startOf('week');
-        if (Math.abs(d.diff(realDate, 'seconds')) <= step/2) {accdiff += realDate.diff(d,'miliseconds'); return d.toDate();}
-        d = moment(epoch).startOf('day');
-        if (Math.abs(d.diff(realDate, 'seconds')) <= step/2) {accdiff += realDate.diff(d,'miliseconds'); return d.toDate();}
-        d = moment(epoch).startOf('hour');
-        if (Math.abs(d.diff(realDate, 'seconds')) <= step/2) {accdiff += realDate.diff(d,'miliseconds'); return d.toDate();}
-        d = moment(epoch).startOf('minute');
-        if (Math.abs(d.diff(realDate, 'seconds')) <= step/2) {accdiff += realDate.diff(d,'miliseconds'); return d.toDate();}
-        d = moment(epoch).startOf('second');
-        if (Math.abs(d.diff(realDate, 'seconds')) <= step/2) {accdiff += realDate.diff(d,'miliseconds'); return d.toDate();}
+      var fillRange = function (start, min, max, range, numValues) {
+        var diff = max.diff(min, range);
+        var step = Math.ceil(diff/(numValues+1));
+        var inserted = 0;
 
-        return realDate.toDate();
+        if (step === 0) {step = 1;}
+
+        while (inserted < numValues &&
+          (start.isSame(min) || start.startOf(range).isBetween(min, max) || start.isSame(max)) &&
+          tickValues.length < maxValues) {
+          var time = start.toDate().getTime();
+          if (tickValues.indexOf(time) === -1) {
+            tickValues.push(time);
+            inserted++;
+          }
+          start.add(step, range);
+        }
+        return inserted;
       };
 
-      _.each(_.range(start, end+step, step), function(t, i) {
-        var epoch = t * 1000;
-        // console.log(new Date(epoch))
-        // epoch -= accdiff;
-        var n = nearest(epoch);
-        // console.log('con diff', new Date(epoch), 'nearest', n)
-        // console.log(accdiff/1000/60/60/24, 'dias')
-        tickValues.push(n);
-      });
+      var min = startDate.clone();
+      var max = endDate.clone();
 
-      // console.log('tickValues',tickValues.length, tickValues)
+      for (var j in ranges) {
+        if (_.isString(ranges[j]) && !tickValues.length) {
+          var inserted = fillRange(startDate.clone(), min, max, ranges[j], maxValues);
+        }
+      }
+
+      var totalInserted = tickValues.length;
+      while(tickValues.length < maxValues && totalInserted) {
+        var tickValuesCloned = tickValues.slice();
+        var numIntervals = tickValues.length;
+        var intervalWidth = width/numIntervals;
+        var maxValuesRemaining = Math.floor((maxValues - numIntervals)/numIntervals);
+        totalInserted = 0;
+
+        for (var i = 0; i < numIntervals; i++) {
+          var minA;
+          var minB;
+
+          if (tickValuesCloned[i-1]) {
+            minA = moment(tickValuesCloned[i]);
+          } else {
+            minA = min;
+          }
+
+          var maxValuesPerIntervalPx;
+          var maxValuesPerInterval;
+
+          if (tickValuesCloned[i+1]) {
+            minB = moment(tickValuesCloned[i+1]);
+            // maxValuesPerIntervalPx = Math.floor(intervalWidth/minPxStep);
+          } else {
+            minB = max;
+          }
+
+          var stepsize = this.scale.x(minB.toDate()) - this.scale.x(minA.toDate());
+          var intervalWidth = ((minB.toDate().getTime() - minA.toDate().getTime())
+            * stepsize) / (minB.toDate() - minA.toDate());
+
+          maxValuesPerIntervalPx = Math.floor(intervalWidth/minPxStep);
+          maxValuesPerInterval = d3.min([maxValuesRemaining, maxValuesPerIntervalPx]);
+
+          inserted = 0;
+          for (var k in ranges) {
+            if (_.isString(ranges[k]) && !inserted) {
+              inserted = fillRange(minA.clone(), minA, minB, ranges[k], maxValuesPerInterval);
+              totalInserted += inserted;
+            }
+          }
+        }
+      }
+
+
+      tickValues.sort(function(a, b){return a-b;});
+      tickValues = _.map(tickValues, function(a) {return new Date(a);});
+
       model.axis.tickValues(tickValues);
     }
 
@@ -580,7 +627,7 @@ var p_axes = PClass.extend({
     if (!this.opts.xaxis[orient].label) {return;}
     this.$svg.select('.xaxis.' + orient).append('text')
       .attr('class', 'label')
-      .attr('transform', h_getTranslate(-this.opts.margin.left, -4))
+      .attr('transform', h_getTranslate(-this.opts.margin.left, 0))
       .attr('y', 16)
       .attr('x', 0)
       .attr('text-anchor', 'start')
@@ -1272,6 +1319,7 @@ var p_scale = PClass.extend({
         .text(h_getLocale(this.opts.locale)['nodata']);
         this.dataAvailable = false;
 
+      this.opts.onNoData && this.opts.onNoData();
       this.$svg.node().parentNode.style.background = '#f7f7f7';
     }
   }
