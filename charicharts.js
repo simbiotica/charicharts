@@ -627,7 +627,7 @@ var p_axes = PClass.extend({
     if (!this.opts.xaxis[orient].label) {return;}
     this.$svg.select('.xaxis.' + orient).append('text')
       .attr('class', 'label')
-      .attr('transform', h_getTranslate(-this.opts.margin.left, -4))
+      .attr('transform', h_getTranslate(-this.opts.margin.left, 0))
       .attr('y', 16)
       .attr('x', 0)
       .attr('text-anchor', 'start')
@@ -1319,6 +1319,7 @@ var p_scale = PClass.extend({
         .text(h_getLocale(this.opts.locale)['nodata']);
         this.dataAvailable = false;
 
+      this.opts.onNoData && this.opts.onNoData();
       this.$svg.node().parentNode.style.background = '#f7f7f7';
     }
   }

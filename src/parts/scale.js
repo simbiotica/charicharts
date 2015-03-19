@@ -221,6 +221,7 @@ var p_scale = PClass.extend({
         .text(h_getLocale(this.opts.locale)['nodata']);
         this.dataAvailable = false;
 
+      this.opts.onNoData && this.opts.onNoData();
       this.$svg.node().parentNode.style.background = '#f7f7f7';
     }
   }
