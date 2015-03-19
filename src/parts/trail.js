@@ -170,6 +170,27 @@ var p_trail = PClass.extend({
    * @param  {integer} x
    */
   _moveTrail: function(x) {
+    // IE11 and below dont understand marker-start
+    if (window.navigator.userAgent.match("MSIE") ||
+      !!navigator.userAgent.match(/Trident.*rv\:11\./)) {
+      var markerHeight = 11;
+      d3.select('#trailArrow').remove();
+      var markerdef = this.$svg.append('svg:marker')
+        .attr('id', 'trailArrow')
+        .attr('viewBox','0 0 20 20')
+        .attr('refX','20')
+        .attr('refY',markerHeight)
+        .attr('markerUnits','strokeWidth')
+        .attr('markerWidth','15')
+        .attr('markerHeight',markerHeight)
+        .attr('orient','auto')
+        .append('svg:path')
+          .attr('class', 'trail-arrow')
+          .attr('d','M 0 0 L 20 10 L 0 20 z')
+          .attr('fill', '#777');
+      this.trailLine.attr('marker-start', 'url(#trailArrow)');
+    }
+
     this.trailLine.attr('x1', x).attr('x2', x);
   }
 
