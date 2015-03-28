@@ -154,9 +154,17 @@ var p_trail = PClass.extend({
         return _.extend({}, value, {id: serie.id}, _.omit(serie, 'values', 'path'));
       } else if (serie.type === 'bar' || serie.type === 'area') {
         return _.map(serie.data, function(d) {
-          var values = d.values[self.bisector(d.values, xvalue)];
-          if (!values) {values = {x: null, y: null};}
-          return _.extend(values, {id: d.id}, _.omit(d, 'values'));
+          var indexAfter = self.bisector(d.values, xvalue);
+
+          if (d.values.length === indexAfter) {
+            value = {x: null, y: null};
+          } else if (indexAfter > 0) {
+            var index = indexAfter - 1;
+            if (index < 0) {index=0;}
+            value = d.values[index];
+          } 
+          if (!value) {value = {x: null, y: null};}
+          return _.extend(value, {id: d.id}, _.omit(d, 'values'));
         });
       }
     });
