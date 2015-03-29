@@ -99,7 +99,7 @@ var p_axes = PClass.extend({
     model.axis = d3.svg.axis()
       .scale(this.scale.x)
       .orient('bottom')
-      .tickSize(this.opts.xaxis.bottom.tickLines ? 14 : 5, 0)
+      .tickSize(this.opts.xaxis.bottom.tickLines ? 7 : 5, 0)
       .tickFormat(this.opts.xaxis.bottom.tickFormat || tickFormat);
     var ticks = this.opts.xaxis.ticks;
 
@@ -110,93 +110,62 @@ var p_axes = PClass.extend({
       var start = domain[0].getTime();
       var end = domain[1].getTime();
       var diff = end - start;
-      var minPxStep = 100;
-      var width = this.opts.fullWidth;
-      var maxValues = Math.ceil(width/minPxStep)+1;
+      var minStepSize = 90;
+      var graphWidth = this.opts.fullWidth;
+      var numValues = Math.ceil(graphWidth/minStepSize)+1;
+      var stepIntervalMinutes = (end - start)/numValues/1000/60;
+      var range;
+      var stepInterval;
+
+      // 10 minutes
+      if (stepIntervalMinutes <= 10) {range = 'minutes';stepInterval = 10;}
+      // 30 minutes
+      else if (stepIntervalMinutes <= 30) {range = 'minutes';stepInterval = 30;}
+      // 1 hours
+      else if (stepIntervalMinutes <= 60) {range = 'hours';stepInterval = 1;}
+      // 2 hours
+      else if (stepIntervalMinutes <= 2*60) {range = 'hours';stepInterval = 2;}
+      // 4 hours
+      else if (stepIntervalMinutes <= 4*60) {range = 'hours';stepInterval = 4;}
+      // 6 hours
+      else if (stepIntervalMinutes <= 6*60) {range = 'hours';stepInterval = 6;}
+      // 12 hours
+      else if (stepIntervalMinutes <= 12*60) {range = 'hours';stepInterval = 12;}
+      // 1 day
+      else if (stepIntervalMinutes <= 24*60) {range = 'days';stepInterval = 1;}
+      // 2 day
+      else if (stepIntervalMinutes <= 2*24*60) {range = 'days';stepInterval = 2;}
+      // 4 day
+      else if (stepIntervalMinutes <= 4*24*60) {range = 'days';stepInterval = 4;}
+      // 1 semana
+      else if (stepIntervalMinutes <= 7*24*60) {range = 'weeks';stepInterval = 1;}
+      // 2 semanas
+      else if (stepIntervalMinutes <= 2*7*24*60) {range = 'weeks';stepInterval = 2;}
+      // 1 mes
+      else if (stepIntervalMinutes <= (365/12)*24*60) {range = 'months';stepInterval = 1;}
+      // 2 mes
+      else if (stepIntervalMinutes <= (365/12)*2*24*60) {range = 'months';stepInterval = 2;}
+      // 3 mes
+      else if (stepIntervalMinutes <= (365/12)*3*24*60) {range = 'months';stepInterval = 3;}
+      // 4 mes
+      else if (stepIntervalMinutes <= (365/12)*4*24*60) {range = 'months';stepInterval = 4;}
+      // 6 mes
+      else if (stepIntervalMinutes <= (365/12)*6*24*60) {range = 'months';stepInterval = 6;}
+      // years
+      else {range = 'years';stepInterval = 1;}
+
       var tickValues = [];
-      var ranges = ['year', 'month', 'day', 'hour', 'minutes'];
-
-      var startDate = moment(start);
-      var endDate = moment(end);
-
-      var fillRange = function (start, min, max, range, numValues) {
-        var diff = max.diff(min, range);
-        var step = Math.ceil(diff/(numValues+1));
-        var inserted = 0;
-
-        if (step === 0) {step = 1;}
-
-        while (inserted < numValues &&
-          (start.isSame(min) || start.startOf(range).isBetween(min, max) || start.isSame(max)) &&
-          tickValues.length < maxValues) {
-          var time = start.toDate().getTime();
-          if (tickValues.indexOf(time) === -1) {
-            tickValues.push(time);
-            inserted++;
-          }
-          start.add(step, range);
+      var from = moment(start).startOf(range);
+      var t = from.toDate().getTime();
+      while (t <= end) {
+        if (t >= start && tickValues.indexOf(t) === -1) {
+          tickValues.push(t);
         }
-        return inserted;
-      };
-
-      var min = startDate.clone();
-      var max = endDate.clone();
-
-      for (var j in ranges) {
-        if (_.isString(ranges[j]) && !tickValues.length) {
-          var inserted = fillRange(startDate.clone(), min, max, ranges[j], maxValues);
-        }
+        from.add(stepInterval, range);
+        t = from.toDate().getTime();
       }
 
-      var totalInserted = tickValues.length;
-      while(tickValues.length < maxValues && totalInserted) {
-        var tickValuesCloned = tickValues.slice();
-        var numIntervals = tickValues.length;
-        var intervalWidth = width/numIntervals;
-        var maxValuesRemaining = Math.floor((maxValues - numIntervals)/numIntervals);
-        totalInserted = 0;
-
-        for (var i = 0; i < numIntervals; i++) {
-          var minA;
-          var minB;
-
-          if (tickValuesCloned[i-1]) {
-            minA = moment(tickValuesCloned[i]);
-          } else {
-            minA = min;
-          }
-
-          var maxValuesPerIntervalPx;
-          var maxValuesPerInterval;
-
-          if (tickValuesCloned[i+1]) {
-            minB = moment(tickValuesCloned[i+1]);
-            // maxValuesPerIntervalPx = Math.floor(intervalWidth/minPxStep);
-          } else {
-            minB = max;
-          }
-
-          var stepsize = this.scale.x(minB.toDate()) - this.scale.x(minA.toDate());
-          var intervalWidth = ((minB.toDate().getTime() - minA.toDate().getTime())
-            * stepsize) / (minB.toDate() - minA.toDate());
-
-          maxValuesPerIntervalPx = Math.floor(intervalWidth/minPxStep);
-          maxValuesPerInterval = d3.min([maxValuesRemaining, maxValuesPerIntervalPx]);
-
-          inserted = 0;
-          for (var k in ranges) {
-            if (_.isString(ranges[k]) && !inserted) {
-              inserted = fillRange(minA.clone(), minA, minB, ranges[k], maxValuesPerInterval);
-              totalInserted += inserted;
-            }
-          }
-        }
-      }
-
-
-      tickValues.sort(function(a, b){return a-b;});
       tickValues = _.map(tickValues, function(a) {return new Date(a);});
-
       model.axis.tickValues(tickValues);
     }
 
