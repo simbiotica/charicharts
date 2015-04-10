@@ -1,9 +1,3 @@
-/**
- * Axes Module
- * -----------
- * Add x/y axis.
- *
- */
 var p_axes = PClass.extend({
 
   deps: [
@@ -20,159 +14,54 @@ var p_axes = PClass.extend({
     }
   }],
 
-  initialize: function() {
-    if (!this._$scope.dataAvailable) {return;}
-    this._status = {
-      axes: this._initAxesModel()
-    };
-    _.each(this._status.axes, this._renderAxis, this);
+  _statusDefaults: {
+    axes: {}
   },
 
-  _renderAxis: function(model, orient) {
-    switch(orient) {
-      case 'bottom': this._renderBottom(model); break;
-      case 'left': this._renderLeft(model); break;
-      case 'right': this._renderRight(model); break;}
+  initialize: function() {
+    if (!this._$scope.dataAvailable) {return;}
+    this._status = _.clone(this._statusDefaults);
+
+    // Render axis
+    if (this.opts.yaxis.left.enabled) {
+      this._renderLeft();}
+    if (this.opts.yaxis.right.enabled || !!this.scale.y2) {
+      this._renderRight();}
+    if (this.opts.xaxis.top.enabled) {
+      this._renderTop();}
+    if (this.opts.xaxis.bottom.enabled) {
+      this._renderBottom();}
+
     this._afterAxisChanges();
   },
 
-  _getDataResolution: function() {
-    var resolution;
-
-    var getRes = function(valuesList) {
-      var res;
-
-      for (var i = valuesList.length - 1; i >= 0; i--) {
-        var values = valuesList[i];
-        var maxIteration = values.length;
-        if (maxIteration > 24) {maxIteration = 24;}
-
-        for (var j = 1; j < maxIteration; j++) {
-          var resTmp = values[j].x - values[j-1].x;
-          if (!res || resTmp < res) {
-            res = resTmp;
-          }
-        }
-      }
-      return res;
-    };
-
-    _.each(this.data, function(d) {
-      var resTmp = getRes(d.values ?
-        [d.values] : _.pluck(d.data, 'values'));
-
-      if (!resolution || resTmp < resolution) {
-        resolution = resTmp;
-      }
-    });
-
-    return resolution/1000;
+  _renderTop: function() {
+    var top = this._status.axes.top = {};
   },
 
-  _renderBottom: function(model) {
-    var localeFormatter = d3.locale(h_getLocale(this.opts.locale));
-    // The first predicate function that returns true will
-    // determine how the specified date is formatted.
-    // For more info in time formatting directives go to:
-    // https://github.com/mbostock/d3/wiki/Time-Formatting
-    var customTimeformats = [
-      // milliseconds for all other times, such as ".012"
-      ['.%L', function(d) { return d.getMilliseconds(); }],
-      // for second boundaries, such as ":45"
-      [':%S', function(d) { return d.getSeconds(); }],
-      // for minute boundaries, such as "01:23"
-      ['%H:%M', function(d) { return d.getMinutes(); }],
-      // for hour boundaries, such as "01"
-      ['%H', function(d) { return d.getHours(); }],
-      // for day boundaries, such as "Mon 7"
-      ['%a %d', function(d) { return d.getDay() && d.getDate() !== 1; }],
-      // for week boundaries, such as "Feb 06"
-      ['%b %d', function(d) { return d.getDate() !== 1; }],
-      // for month boundaries, such as "February"
-      ['%B', function(d) { return d.getMonth(); }],
-      // for year boundaries, such as "2011".
-      ['%Y', function() { return true; }]
-    ];
-    var tickFormat = localeFormatter.timeFormat.multi(customTimeformats);
+  _renderBottom: function() {
+    var model = this._status.axes.bottom = {};
 
     // Generate axis
     model.axis = d3.svg.axis()
       .scale(this.scale.x)
       .orient('bottom')
       .tickSize(this.opts.xaxis.bottom.tickLines ? 7 : 5, 0)
-      .tickFormat(this.opts.xaxis.bottom.tickFormat || tickFormat);
+      .tickFormat(this.opts.xaxis.bottom.tickFormat ||
+        h_getTickFormatDate(this.opts.locale));
     var ticks = this.opts.xaxis.ticks;
 
     if (ticks) {
-      model.axis.ticks.apply(model.axis, ticks);
+      model.ticks.apply(model, ticks);
     } else {
-      var domain = this.scale.x.domain();
-      var start = domain[0].getTime();
-      var end = domain[1].getTime();
-      var diff = end - start;
-      var minStepSize = 90;
-      var graphWidth = this.opts.fullWidth;
-      var numValues = Math.ceil(graphWidth/minStepSize)+1;
-      var stepIntervalMinutes = (end - start)/numValues/1000/60;
-      var range;
-      var stepInterval;
-
-      // 10 minutes
-      if (stepIntervalMinutes <= 10) {range = 'minutes';stepInterval = 10;}
-      // 30 minutes
-      else if (stepIntervalMinutes <= 30) {range = 'minutes';stepInterval = 30;}
-      // 1 hours
-      else if (stepIntervalMinutes <= 60) {range = 'hours';stepInterval = 1;}
-      // 2 hours
-      else if (stepIntervalMinutes <= 2*60) {range = 'hours';stepInterval = 2;}
-      // 4 hours
-      else if (stepIntervalMinutes <= 4*60) {range = 'hours';stepInterval = 4;}
-      // 6 hours
-      else if (stepIntervalMinutes <= 6*60) {range = 'hours';stepInterval = 6;}
-      // 12 hours
-      else if (stepIntervalMinutes <= 12*60) {range = 'hours';stepInterval = 12;}
-      // 1 day
-      else if (stepIntervalMinutes <= 24*60) {range = 'days';stepInterval = 1;}
-      // 2 day
-      else if (stepIntervalMinutes <= 2*24*60) {range = 'days';stepInterval = 2;}
-      // 4 day
-      else if (stepIntervalMinutes <= 4*24*60) {range = 'days';stepInterval = 4;}
-      // 1 semana
-      else if (stepIntervalMinutes <= 7*24*60) {range = 'weeks';stepInterval = 1;}
-      // 2 semanas
-      else if (stepIntervalMinutes <= 2*7*24*60) {range = 'weeks';stepInterval = 2;}
-      // 1 mes
-      else if (stepIntervalMinutes <= (365/12)*24*60) {range = 'months';stepInterval = 1;}
-      // 2 mes
-      else if (stepIntervalMinutes <= (365/12)*2*24*60) {range = 'months';stepInterval = 2;}
-      // 3 mes
-      else if (stepIntervalMinutes <= (365/12)*3*24*60) {range = 'months';stepInterval = 3;}
-      // 4 mes
-      else if (stepIntervalMinutes <= (365/12)*4*24*60) {range = 'months';stepInterval = 4;}
-      // 6 mes
-      else if (stepIntervalMinutes <= (365/12)*6*24*60) {range = 'months';stepInterval = 6;}
-      // years
-      else {range = 'years';stepInterval = 1;}
-
-      var tickValues = [];
-      var from = moment(start).startOf(range);
-      var t = from.toDate().getTime();
-      while (t <= end) {
-        if (t >= start && tickValues.indexOf(t) === -1) {
-          tickValues.push(t);
-        }
-        from.add(stepInterval, range);
-        t = from.toDate().getTime();
-      }
-
-      tickValues = _.map(tickValues, function(a) {return new Date(a);});
+      var tickValues = h_getTickValuesFromDate(this.scale.x.domain(), this.opts.fullWidth);
       model.axis.tickValues(tickValues);
     }
 
     // Render axis
     model.el = this.$svg.append('g')
         .attr('class', 'xaxis bottom')
-        .attr('transform', 'translate(0,'+(this.opts.height+1)+')')
+        .attr('transform', 'translate(0,' + (this.opts.height + 1) + ')')
         .call(model.axis);
 
     if (this.opts.xaxis.bottom.tickLines) {
@@ -181,8 +70,7 @@ var p_axes = PClass.extend({
         .attr('x', 6)
         .style('text-anchor', 'start');
     } else {
-      model.el.selectAll('text')
-        .attr('y', 9);
+      model.el.selectAll('text').attr('y', 9);
     }
 
     // Append baseline
@@ -196,7 +84,8 @@ var p_axes = PClass.extend({
     this._renderXLabel('bottom');
   },
 
-  _renderLeft: function(model) {
+  _renderLeft: function() {
+    var model = this._status.axes.left = {};
     var tickFormat = this.opts.yaxis.left.tickFormat;
     var ticks = this.opts.yaxis.ticks || [];
 
@@ -217,7 +106,8 @@ var p_axes = PClass.extend({
     this._renderYLabel('left');
   },
 
-  _renderRight: function(model) {
+  _renderRight: function() {
+    var model = this._status.axes.right = {};
     var tickFormat = this.opts.yaxis.right.tickFormat;
     var ticks = this.opts.yaxis.ticks || [];
     var self = this;
@@ -247,74 +137,36 @@ var p_axes = PClass.extend({
     this._renderYLabel('right');
   },
 
-  /**
-   * Update given axis when the scales changes.
-   */
-  _updateAxis: function(model, orient) {
-    var scale = (orient === 'top' || orient === 'bottom') ?
-      this.scale.x : this.scale.y;
-
-    model.el
-      // .transition()
-      // .duration(500)
-      // .ease('linear')
-      .call(model.axis.scale(scale));
-
-    this._afterAxisChanges(model);
-  },
-
-  /**
-   * Set axes object in status model.
-   */
-  _initAxesModel: function() {
-    var self = this,
-        axes = {};
-
-    var axesEnabled = {
-      left: this.opts.yaxis.left.enabled,
-      right: this.opts.yaxis.right.enabled || !!this.scale.y2,
-      top: this.opts.xaxis.top.enabled,
-      bottom: this.opts.xaxis.bottom.enabled
-    };
-
-    _.each(axesEnabled, function(enabled, orient) {
-      if (!enabled) {return;}
-      axes[orient] = {};
-    });
-
-    return axes;
-  },
-
-  _renderXLabel: function(orient) {
-    if (!this.opts.xaxis[orient].label) {return;}
-    this.$svg.select('.xaxis.' + orient).append('text')
+  _renderXLabel: function(orientation) {
+    if (!this.opts.xaxis[orientation].label) {return;}
+    this.$svg.select('.xaxis.' + orientation).append('text')
       .attr('class', 'label')
       .attr('transform', h_getTranslate(-this.opts.margin.left, 0))
       .attr('y', 16)
       .attr('x', 0)
       .attr('text-anchor', 'start')
-      .text(this.opts.xaxis[orient].label);
+      .text(this.opts.xaxis[orientation].label);
   },
 
-  _renderYLabel: function(orient) {
+  _renderYLabel: function(orientation) {
     var label;
     var scaleUnits = this._$scope.scaleUnits.y;
 
-    if (orient === 'left') {
+    if (orientation === 'left') {
       scaleUnits = (scaleUnits === 'default') ? false : scaleUnits;
-      label = scaleUnits || this.opts.yaxis[orient].label;
-    } else if (orient === 'right') {
-      label = this._$scope.scaleUnits.y2 || this.opts.yaxis[orient].label;
+      label = scaleUnits || this.opts.yaxis[orientation].label;
+    } else if (orientation === 'right') {
+      label = this._$scope.scaleUnits.y2 || this.opts.yaxis[orientation].label;
     }
     if (!label || label === 'default') {return;}
 
-    this.$svg.select('.yaxis.' + orient).append('text')
+    this.$svg.select('.yaxis.' + orientation).append('text')
       .attr('class', 'label')
-      .attr('transform', h_getTranslate(orient === 'left' ? -this.opts.margin.left :
+      .attr('transform', h_getTranslate(orientation === 'left' ? -this.opts.margin.left :
         this.opts.width + this.opts.margin.right, this.opts.yaxis.textMarginTop))
       .attr('y', -10)
       .attr('x', 0)
-      .attr('text-anchor', orient === 'left' ? 'start' : 'end')
+      .attr('text-anchor', orientation === 'left' ? 'start' : 'end')
       .text(label);
   },
 
@@ -322,7 +174,7 @@ var p_axes = PClass.extend({
    * Stuff to do when the axes have been
    * rendered or updated.
    */
-  _afterAxisChanges: function(model) {
+  _afterAxisChanges: function() {
     // remove domain
     this.$svg.select('.yaxis .domain').remove();
     this.$svg.select('.xaxis .domain').remove();
@@ -362,12 +214,15 @@ var p_axes = PClass.extend({
       if (d !== 0) {return;}
       d3.select(this).attr('class', 'zeroline');
     });
+  },
+
+  /**
+   * Update given axis when the scales changes.
+   */
+  _updateAxis: function(model, orientation) {
+    var scale = (orientation === 'top' || orientation === 'bottom') ? this.scale.x : this.scale.y;
+    model.el.call(model.axis.scale(scale));
+    this._afterAxisChanges();
   }
 
 });
-
-  // var tickCharacters: {
-  //   year: 4,
-  //   month: 2,
-  //   hour: 2
-  // };

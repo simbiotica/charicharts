@@ -266,8 +266,7 @@ var p_series = PClass.extend({
       return d.values;
     }));
     // Let use the scale of any serie
-    var yScale;
-    var min, max;
+    var yScale, min, max, extent;
 
     // ID optional
     // _.each(series.data, function(serie) {
@@ -299,7 +298,7 @@ var p_series = PClass.extend({
       });
 
       // Fit to new scale
-      var extent = [min, max];
+      extent = [min, max];
       this.trigger('Scale/update', [{
         y: {
           extent: extent,
@@ -314,12 +313,12 @@ var p_series = PClass.extend({
         .y0(function(d) { return yScale(0); })
         .y1(function(d) { return yScale(d.y); });
 
-      var max = d3.max(allvalues, function(d) {
+      max = d3.max(allvalues, function(d) {
         return d.y;
       });
 
       // Fit to new scale
-      var extent = [0, max];
+      extent = [0, max];
       this.trigger('Scale/update', [{
         y: {
           extent: extent,

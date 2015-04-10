@@ -39,33 +39,22 @@
 </style>
 <body>
 <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.7.0/underscore.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.1/moment.js"></script>
 <script src="http://d3js.org/d3.v3.js"></script>
 <script src="charicharts.js"></script>
 <script>
 
-var color = d3.scale.category10(),
-    random = d3.random.normal(0, 1);
+var color = d3.scale.category10();
 
 var data = [{
   id: 1005,
   type: 'line',
-  values: getData(40, 100, 100),
+  values: getData(40, 100, 200),
   dots: true,
   unit: 'Euros',
   interpolation: 'step',
   color: '#444'
 }];
-
-/*{
-  id: 1006,
-  type: 'line',
-  values: getData(40, 0, 9600),
-  dots: false,
-  unit: 'kW',
-  interpolation: 'linear',
-  color: color(1)
-}
-*/
 
 setNull(data[0].values, 4, 6, 14, 15, 16);
 

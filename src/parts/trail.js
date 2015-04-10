@@ -162,7 +162,7 @@ var p_trail = PClass.extend({
             var index = indexAfter - 1;
             if (index < 0) {index=0;}
             value = d.values[index];
-          } 
+          }
           if (!value) {value = {x: null, y: null};}
           return _.extend(value, {id: d.id}, _.omit(d, 'values'));
         });
@@ -179,7 +179,7 @@ var p_trail = PClass.extend({
    */
   _moveTrail: function(x) {
     // IE11 and below dont understand marker-start
-    if (window.navigator.userAgent.match("MSIE") ||
+    if (window.navigator.userAgent.match('MSIE') ||
       !!navigator.userAgent.match(/Trident.*rv\:11\./)) {
       var markerHeight = 11;
       d3.select('#trailArrow').remove();
