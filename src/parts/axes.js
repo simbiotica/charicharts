@@ -37,20 +37,37 @@ var p_axes = PClass.extend({
 
   _renderTop: function() {
     var top = this._status.axes.top = {};
+    var opts = this.opts.xaxis.top;
+    var ticks = this.opts.xaxis.ticks;
+
+    model.axis = d3.svg.axis()
+      .scale(this.scale.x)
+      .orient('top')
+      .tickSize(7)
+      .tickFormat(opts.tickFormat || h_getTickFormatDate(this.opts.locale));
+
+    // Apply ticks
+    if (ticks) {
+      model.ticks.apply(model, ticks);
+    } else {
+      var tickValues = h_getTickValuesFromDate(this.scale.x.domain(), this.opts.fullWidth);
+      model.axis.tickValues(tickValues);
+    }
   },
 
   _renderBottom: function() {
     var model = this._status.axes.bottom = {};
+    var opts = this.opts.xaxis.bottom;
+    var ticks = this.opts.xaxis.ticks;
 
     // Generate axis
     model.axis = d3.svg.axis()
       .scale(this.scale.x)
       .orient('bottom')
-      .tickSize(this.opts.xaxis.bottom.tickLines ? 7 : 5, 0)
-      .tickFormat(this.opts.xaxis.bottom.tickFormat ||
-        h_getTickFormatDate(this.opts.locale));
-    var ticks = this.opts.xaxis.ticks;
+      .tickSize(opts.tickLines ? 7 : 5, 0)
+      .tickFormat(opts.tickFormat || h_getTickFormatDate(this.opts.locale));
 
+    // Apply ticks
     if (ticks) {
       model.ticks.apply(model, ticks);
     } else {
@@ -64,7 +81,7 @@ var p_axes = PClass.extend({
         .attr('transform', 'translate(0,' + (this.opts.height + 1) + ')')
         .call(model.axis);
 
-    if (this.opts.xaxis.bottom.tickLines) {
+    if (opts.tickLines) {
       model.el.selectAll('text')
         .attr('y', 0)
         .attr('x', 6)
