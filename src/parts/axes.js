@@ -36,7 +36,44 @@ var p_axes = PClass.extend({
   },
 
   _renderTop: function() {
-    var top = this._status.axes.top = {};
+    var model = this._status.axes.top = {};
+
+    model.axis = d3.svg.axis()
+      .scale(this.scale.x2)
+      .orient('top')
+      .tickSize(5)
+      .tickFormat(this.opts.xaxis.top.tickFormat ||
+        h_getTickFormatDate(this.opts.locale));
+
+    if (this.opts.xaxis.ticks) {
+      model.ticks.apply(model, this.opts.xaxis.ticks);
+    } else {
+      var tickValues = h_getTickValuesFromDate(this.scale.x2.domain(), this.opts.fullWidth);
+      model.axis.tickValues(tickValues);
+    }
+
+    // Render axis
+    model.el = this.$svg.append('g')
+        .attr('class', 'xaxis top')
+        .attr('transform', 'translate(0,0)')
+        .call(model.axis);
+
+    if (this.opts.xaxis.top.tickLines) {
+      model.el.selectAll('text')
+        .attr('y', 0)
+        .attr('x', 6)
+        .style('text-anchor', 'start');
+    }
+
+    // Append baseline
+    model.el.append('rect')
+      .attr('class', 'baseline')
+      .attr('y', -1)
+      .attr('x', -this.opts.margin.left)
+      .attr('height', 1)
+      .attr('width', this.opts.fullWidth);
+
+    // this._renderXLabel('bottom');
   },
 
   _renderBottom: function() {

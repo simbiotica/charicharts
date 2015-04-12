@@ -64,14 +64,35 @@ var p_scale = PClass.extend({
     if (this._status.scaleUnits.y2) {
       this._status.scale.y2 = this._updateScale('y2', options);
     }
+    if (this.opts.xaxis.top.enabled) {
+      this._status.scale.x2 = this._updateScale('x2', options);
+    }
   },
 
+  /**
+   * position = x,x2,y,y2
+   */
   _updateScale: function(position, options) {
+    var domain, range;
     var opts = this.opts[position.replace(/\d/, '') + 'axis'];
-    var domain = this.opts[position+'axis'].domain ? this.opts.xaxis.domain :
-    this._getExtent(position, opts.fit, options);
-    var range = position === 'x' ? [0, this.opts.width] : [this.opts.height, 0];
 
+    // Get domain
+    if (position === 'x' && this.opts.xaxis.bottom.domain) {
+      domain = this.opts.xaxis.bottom.domain;
+    } else if (position === 'x2' && this.opts.xaxis.top.domain) {
+      domain = this.opts.xaxis.top.domain;
+    } else {
+      domain = this._getExtent(position, opts.fit, options);
+    }
+
+    // Get range
+    if (position === 'x' || position === 'x2') {
+      range = [0, this.opts.width];
+    } else {
+      range = [this.opts.height, 0];
+    }
+
+    // Get scale
     return this._d3Scales[opts.scale]()
       .domain(domain)
       .range(range);
@@ -82,7 +103,7 @@ var p_scale = PClass.extend({
     options = options || {};
     var extent;
     // x axes uses all data
-    if (position === 'x') {
+    if (position === 'x' || position === 'x2') {
       var allData = _.flatten(_.values(this._dataFlattened));
       extent = d3.extent(allData, function(d) {
         return d.x;
