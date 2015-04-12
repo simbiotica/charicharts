@@ -46,7 +46,7 @@ var p_axes = PClass.extend({
         h_getTickFormatDate(this.opts.locale));
 
     if (this.opts.xaxis.ticks) {
-      model.ticks.apply(model, this.opts.xaxis.ticks);
+      model.axis.ticks.apply(model, this.opts.xaxis.ticks);
     } else {
       var tickValues = h_getTickValuesFromDate(this.scale.x2.domain(), this.opts.fullWidth);
       model.axis.tickValues(tickValues);
@@ -86,10 +86,9 @@ var p_axes = PClass.extend({
       .tickSize(this.opts.xaxis.bottom.tickLines ? 7 : 5, 0)
       .tickFormat(this.opts.xaxis.bottom.tickFormat ||
         h_getTickFormatDate(this.opts.locale));
-    var ticks = this.opts.xaxis.ticks;
 
-    if (ticks) {
-      model.ticks.apply(model, ticks);
+    if (this.opts.xaxis.ticks) {
+      model.axis.ticks.apply(model, this.opts.xaxis.ticks);
     } else {
       var tickValues = h_getTickValuesFromDate(this.scale.x.domain(), this.opts.fullWidth);
       model.axis.tickValues(tickValues);

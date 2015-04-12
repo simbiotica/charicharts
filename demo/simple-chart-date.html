@@ -54,6 +54,14 @@ var data = [{
   unit: 'Euros',
   interpolation: 'step',
   color: '#444'
+},{
+  id: 10025,
+  type: 'line',
+  values: getData(40, 100, 200),
+  dots: true,
+  unit: 'Euros',
+  interpolation: 'step',
+  color: 'red'
 }];
 
 setNull(data[0].values, 4, 6, 14, 15, 16);
@@ -68,9 +76,12 @@ var options = {
     textMarginTop: -10,
   },
   xaxis: {
+    ticks: [2],
     top: {
       domain: [a, new Date()],
-      // tickLines: true,
+      enabled: true
+    },
+    bottom: {
       enabled: true
     }
   }
