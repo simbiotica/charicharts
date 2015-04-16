@@ -1813,7 +1813,7 @@ var p_series = PClass.extend({
     var yScale = this._getYScale(serie);
 
     return d3.svg.line()
-      .defined(function(d) {return !!d.y;})
+      .defined(function(d) {return _.isNumber(d.y);})
       .x(function(d) {return self.scale.x(d.x);})
       .y(function(d) {return yScale(d.y);});
   },
