@@ -36,23 +36,44 @@ var p_axes = PClass.extend({
   },
 
   _renderTop: function() {
-    var top = this._status.axes.top = {};
-    var opts = this.opts.xaxis.top;
-    var ticks = this.opts.xaxis.ticks;
+    var model = this._status.axes.top = {};
 
     model.axis = d3.svg.axis()
-      .scale(this.scale.x)
+      .scale(this.scale.x2)
       .orient('top')
-      .tickSize(7)
-      .tickFormat(opts.tickFormat || h_getTickFormatDate(this.opts.locale));
+      .tickSize(5)
+      .tickFormat(this.opts.xaxis.top.tickFormat ||
+        h_getTickFormatDate(this.opts.locale));
 
-    // Apply ticks
-    if (ticks) {
-      model.ticks.apply(model, ticks);
+    if (this.opts.xaxis.ticks) {
+      model.axis.ticks.apply(model, this.opts.xaxis.ticks);
     } else {
-      var tickValues = h_getTickValuesFromDate(this.scale.x.domain(), this.opts.fullWidth);
+      var tickValues = h_getTickValuesFromDate(this.scale.x2.domain(), this.opts.fullWidth);
       model.axis.tickValues(tickValues);
     }
+
+    // Render axis
+    model.el = this.$svg.append('g')
+        .attr('class', 'xaxis top')
+        .attr('transform', 'translate(0,0)')
+        .call(model.axis);
+
+    if (this.opts.xaxis.top.tickLines) {
+      model.el.selectAll('text')
+        .attr('y', 0)
+        .attr('x', 6)
+        .style('text-anchor', 'start');
+    }
+
+    // Append baseline
+    model.el.append('rect')
+      .attr('class', 'baseline')
+      .attr('y', -1)
+      .attr('x', -this.opts.margin.left)
+      .attr('height', 1)
+      .attr('width', this.opts.fullWidth);
+
+    // this._renderXLabel('bottom');
   },
 
   _renderBottom: function() {
@@ -64,12 +85,12 @@ var p_axes = PClass.extend({
     model.axis = d3.svg.axis()
       .scale(this.scale.x)
       .orient('bottom')
-      .tickSize(opts.tickLines ? 7 : 5, 0)
-      .tickFormat(opts.tickFormat || h_getTickFormatDate(this.opts.locale));
+      .tickSize(this.opts.xaxis.bottom.tickLines ? 7 : 5, 0)
+      .tickFormat(this.opts.xaxis.bottom.tickFormat ||
+        h_getTickFormatDate(this.opts.locale));
 
-    // Apply ticks
-    if (ticks) {
-      model.ticks.apply(model, ticks);
+    if (this.opts.xaxis.ticks) {
+      model.axis.ticks.apply(model, this.opts.xaxis.ticks);
     } else {
       var tickValues = h_getTickValuesFromDate(this.scale.x.domain(), this.opts.fullWidth);
       model.axis.tickValues(tickValues);
@@ -195,6 +216,7 @@ var p_axes = PClass.extend({
     // remove domain
     this.$svg.select('.yaxis .domain').remove();
     this.$svg.select('.xaxis .domain').remove();
+    this.$svg.select('.yaxis.right .domain').remove();
 
     this.$svg.selectAll('.yaxis.left .tick text')
       .style('text-anchor', 'start', 'important');

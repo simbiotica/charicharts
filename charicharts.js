@@ -433,23 +433,44 @@ var p_axes = PClass.extend({
   },
 
   _renderTop: function() {
-    var top = this._status.axes.top = {};
-    var opts = this.opts.xaxis.top;
-    var ticks = this.opts.xaxis.ticks;
+    var model = this._status.axes.top = {};
 
     model.axis = d3.svg.axis()
-      .scale(this.scale.x)
+      .scale(this.scale.x2)
       .orient('top')
-      .tickSize(7)
-      .tickFormat(opts.tickFormat || h_getTickFormatDate(this.opts.locale));
+      .tickSize(5)
+      .tickFormat(this.opts.xaxis.top.tickFormat ||
+        h_getTickFormatDate(this.opts.locale));
 
-    // Apply ticks
-    if (ticks) {
-      model.ticks.apply(model, ticks);
+    if (this.opts.xaxis.ticks) {
+      model.axis.ticks.apply(model, this.opts.xaxis.ticks);
     } else {
-      var tickValues = h_getTickValuesFromDate(this.scale.x.domain(), this.opts.fullWidth);
+      var tickValues = h_getTickValuesFromDate(this.scale.x2.domain(), this.opts.fullWidth);
       model.axis.tickValues(tickValues);
     }
+
+    // Render axis
+    model.el = this.$svg.append('g')
+        .attr('class', 'xaxis top')
+        .attr('transform', 'translate(0,0)')
+        .call(model.axis);
+
+    if (this.opts.xaxis.top.tickLines) {
+      model.el.selectAll('text')
+        .attr('y', 0)
+        .attr('x', 6)
+        .style('text-anchor', 'start');
+    }
+
+    // Append baseline
+    model.el.append('rect')
+      .attr('class', 'baseline')
+      .attr('y', -1)
+      .attr('x', -this.opts.margin.left)
+      .attr('height', 1)
+      .attr('width', this.opts.fullWidth);
+
+    // this._renderXLabel('bottom');
   },
 
   _renderBottom: function() {
@@ -461,12 +482,12 @@ var p_axes = PClass.extend({
     model.axis = d3.svg.axis()
       .scale(this.scale.x)
       .orient('bottom')
-      .tickSize(opts.tickLines ? 7 : 5, 0)
-      .tickFormat(opts.tickFormat || h_getTickFormatDate(this.opts.locale));
+      .tickSize(this.opts.xaxis.bottom.tickLines ? 7 : 5, 0)
+      .tickFormat(this.opts.xaxis.bottom.tickFormat ||
+        h_getTickFormatDate(this.opts.locale));
 
-    // Apply ticks
-    if (ticks) {
-      model.ticks.apply(model, ticks);
+    if (this.opts.xaxis.ticks) {
+      model.axis.ticks.apply(model, this.opts.xaxis.ticks);
     } else {
       var tickValues = h_getTickValuesFromDate(this.scale.x.domain(), this.opts.fullWidth);
       model.axis.tickValues(tickValues);
@@ -592,6 +613,7 @@ var p_axes = PClass.extend({
     // remove domain
     this.$svg.select('.yaxis .domain').remove();
     this.$svg.select('.xaxis .domain').remove();
+    this.$svg.select('.yaxis.right .domain').remove();
 
     this.$svg.selectAll('.yaxis.left .tick text')
       .style('text-anchor', 'start', 'important');
@@ -1093,14 +1115,35 @@ var p_scale = PClass.extend({
     if (this._status.scaleUnits.y2) {
       this._status.scale.y2 = this._updateScale('y2', options);
     }
+    if (this.opts.xaxis.top.enabled) {
+      this._status.scale.x2 = this._updateScale('x2', options);
+    }
   },
 
+  /**
+   * position = x,x2,y,y2
+   */
   _updateScale: function(position, options) {
+    var domain, range;
     var opts = this.opts[position.replace(/\d/, '') + 'axis'];
-    var domain = this.opts[position+'axis'].domain ? this.opts.xaxis.domain :
-    this._getExtent(position, opts.fit, options);
-    var range = position === 'x' ? [0, this.opts.width] : [this.opts.height, 0];
 
+    // Get domain
+    if (position === 'x' && this.opts.xaxis.bottom.domain) {
+      domain = this.opts.xaxis.bottom.domain;
+    } else if (position === 'x2' && this.opts.xaxis.top.domain) {
+      domain = this.opts.xaxis.top.domain;
+    } else {
+      domain = this._getExtent(position, opts.fit, options);
+    }
+
+    // Get range
+    if (position === 'x' || position === 'x2') {
+      range = [0, this.opts.width];
+    } else {
+      range = [this.opts.height, 0];
+    }
+
+    // Get scale
     return this._d3Scales[opts.scale]()
       .domain(domain)
       .range(range);
@@ -1111,7 +1154,7 @@ var p_scale = PClass.extend({
     options = options || {};
     var extent;
     // x axes uses all data
-    if (position === 'x') {
+    if (position === 'x' || position === 'x2') {
       var allData = _.flatten(_.values(this._dataFlattened));
       extent = d3.extent(allData, function(d) {
         return d.x;
@@ -1773,7 +1816,7 @@ var p_series = PClass.extend({
     var yScale = this._getYScale(serie);
 
     return d3.svg.line()
-      .defined(function(d) {return !!d.y;})
+      .defined(function(d) {return _.isNumber(d.y);})
       .x(function(d) {return self.scale.x(d.x);})
       .y(function(d) {return yScale(d.y);});
   },
@@ -2117,13 +2160,14 @@ Charicharts.Chart = CClass.extend({
       scale: 'time',
       fit: true,
       ticks: false,
-      domain: null,
       top: {
         enabled: false,
         label: false,
-        tickFormat: null
+        tickFormat: null,
+        domain: null
       },
       bottom: {
+        domain: null,
         enabled: true,
         label: false,
         tickLines: false,
@@ -2212,6 +2256,7 @@ Charicharts.Chart = CClass.extend({
   }
 
 });
+
 Charicharts.PercentageBar = CClass.extend({
 
   modules: [

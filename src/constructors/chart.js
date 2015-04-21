@@ -33,13 +33,14 @@ Charicharts.Chart = CClass.extend({
       scale: 'time',
       fit: true,
       ticks: false,
-      domain: null,
       top: {
         enabled: false,
         label: false,
-        tickFormat: null
+        tickFormat: null,
+        domain: null
       },
       bottom: {
+        domain: null,
         enabled: true,
         label: false,
         tickLines: false,

@@ -54,16 +54,36 @@ var data = [{
   unit: 'Euros',
   interpolation: 'step',
   color: '#444'
+},{
+  id: 10025,
+  type: 'line',
+  values: getData(40, 100, 200),
+  dots: true,
+  unit: 'Euros',
+  interpolation: 'step',
+  color: 'red'
 }];
 
 setNull(data[0].values, 4, 6, 14, 15, 16);
+var a = new Date();
+a.setMonth(2);
 
 var options = {
   target: d3.select('body').node(),
-  margin: '40 10 25 60',
+  margin: '60 10 25 30',
   yaxis: {
     fit: true,
     textMarginTop: -10,
+  },
+  xaxis: {
+    ticks: [2],
+    top: {
+      domain: [a, new Date()],
+      enabled: true
+    },
+    bottom: {
+      enabled: true
+    }
   }
 };
 
