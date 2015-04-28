@@ -53,21 +53,21 @@ var p_no_data_message = PClass.extend({
    * Renders grid on the background.
    */
   _renderGrid: function() {
-    var ticks = 12;
+    var ticks = 8;
     var separation = this.opts.fullHeight / (ticks-1) - 1/ticks;
 
     this.grid = this.$svg.append('g')
       .attr('transform', h_getTranslate(-this.opts.margin.left, -this.opts.margin.top))
       .attr('class', 'bargrid');
 
-    for (var i = 0; i < ticks; i++) {
+    for (var i = 1; i < ticks-1; i++) {
       this.grid.append('line')
         .attr('x1', 0)
         .attr('x2', this.opts.fullWidth)
         .attr('y1', separation*i)
         .attr('y2', separation*i)
         .style('shape-rendering', 'crispEdges')
-        .attr('stroke', '#e2e2e2');
+        .attr('stroke', '#e6e6e6');
     }
   },
 
