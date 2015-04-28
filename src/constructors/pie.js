@@ -3,6 +3,7 @@ Charicharts.Pie = CClass.extend({
   modules: [
     p_svg,
     p_pie,
+    p_no_data_message,
     p_pie_inner_arrow
   ],
 

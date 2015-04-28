@@ -683,13 +683,22 @@ var p_no_data_message = PClass.extend({
 
     var width = h_getLocale(this.opts.locale)['nodata'][0].length * 12;
     var height = 60;
+    var translate;
 
-    var msg = this.$svg.append('g')
-      // Centered svg
-      .attr('transform', h_getTranslate(
+    if (this._$scope.pie) {
+      translate = h_getTranslate(
+        -(this.opts.fullWidth/2) + (this.opts.fullWidth) / 2,
+        -(this.opts.fullHeight/2) + (this.opts.fullHeight) / 2
+      );
+    } else {
+      translate = h_getTranslate(
         -this.opts.margin.left + (this.opts.fullWidth) / 2,
         -this.opts.margin.top + (this.opts.fullHeight) / 2
-      ));
+      );
+    }
+
+    var msg = this.$svg.append('g')
+      .attr('transform', translate);
 
     msg.append('rect')
       .attr('x', -width / 2)
@@ -720,9 +729,16 @@ var p_no_data_message = PClass.extend({
   _renderGrid: function() {
     var ticks = 5;
     var separation = this.opts.fullHeight / (ticks-1) - 1/ticks;
+    var translate;
+
+    if (this._$scope.pie) {
+      translate = h_getTranslate(-(this.opts.fullWidth/2), -(this.opts.fullHeight/2));
+    } else {
+      translate = h_getTranslate(-this.opts.margin.left, -this.opts.margin.top);
+    }
 
     this.grid = this.$svg.append('g')
-      .attr('transform', h_getTranslate(-this.opts.margin.left, -this.opts.margin.top))
+      .attr('transform', translate)
       .attr('class', 'bargrid');
 
     for (var i = 1; i < ticks; i++) {
@@ -912,8 +928,7 @@ var p_pie_inner_arrow = PClass.extend({
   }],
 
   initialize: function() {
-    if (!this.pie) {return;}
-    if (!this.opts.innerArrow) {return;}
+    if (!this._$scope.dataAvailable || !this.opts.innerArrow) {return;}
     var self = this;
     this._drawArrow();
 
@@ -1028,35 +1043,35 @@ var p_pie = PClass.extend({
   }],
 
   initialize: function() {
+    this._dataAvailable = true;
+
     var dataSum = d3.sum(this.data, function(d) {
       return d.value >= 0 ? d.value : 0;
     });
 
-    // If the sum is 0, call onNoData callback
-    // and stop rendering...
     if (dataSum <= 0) {
+      this._dataAvailable = false;
       this.opts.onNoData && this.opts.onNoData();
-      return;
+    } else {
+      // Pie layout
+      this.pie = d3.layout.pie()
+        .value(function(d) {
+          return d.value >= 0 ? d.value : 0;
+        })
+        .sort(null);
+
+      // Pie arc
+      this.arc = d3.svg.arc()
+        .innerRadius(this.opts.radius * this.opts.innerRadius)
+        .outerRadius(this.opts.radius);
+
+      // Paths
+      this.path = this.$svg.selectAll('path');
+      this.update();
+
+      // Set events
+      this._setEvents();
     }
-
-    // Pie layout
-    this.pie = d3.layout.pie()
-      .value(function(d) {
-        return d.value >= 0 ? d.value : 0;
-      })
-      .sort(null);
-
-    // Pie arc
-    this.arc = d3.svg.arc()
-      .innerRadius(this.opts.radius * this.opts.innerRadius)
-      .outerRadius(this.opts.radius);
-
-    // Paths
-    this.path = this.$svg.selectAll('path');
-    this.update();
-
-    // Set events
-    this._setEvents();
 
     return {
       series: {
@@ -1065,7 +1080,8 @@ var p_pie = PClass.extend({
       pie: {
         path: this.path,
         arc: this.arc
-      }
+      },
+      dataAvailable: this._dataAvailable
     };
   },
 
@@ -1125,6 +1141,7 @@ var p_pie = PClass.extend({
   }
 
 });
+
 /**
  * Scale Module
  * ------------
@@ -2342,11 +2359,13 @@ Charicharts.PercentageBar = CClass.extend({
   }
 
 });
+
 Charicharts.Pie = CClass.extend({
 
   modules: [
     p_svg,
     p_pie,
+    p_no_data_message,
     p_pie_inner_arrow
   ],
 
@@ -2376,6 +2395,7 @@ Charicharts.Pie = CClass.extend({
   }
 
 });
+
 /* jshint ignore:start */
   if (typeof define === 'function' && define.amd) {
     define(Charicharts);

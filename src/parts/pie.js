@@ -13,35 +13,35 @@ var p_pie = PClass.extend({
   }],
 
   initialize: function() {
+    this._dataAvailable = true;
+
     var dataSum = d3.sum(this.data, function(d) {
       return d.value >= 0 ? d.value : 0;
     });
 
-    // If the sum is 0, call onNoData callback
-    // and stop rendering...
     if (dataSum <= 0) {
+      this._dataAvailable = false;
       this.opts.onNoData && this.opts.onNoData();
-      return;
+    } else {
+      // Pie layout
+      this.pie = d3.layout.pie()
+        .value(function(d) {
+          return d.value >= 0 ? d.value : 0;
+        })
+        .sort(null);
+
+      // Pie arc
+      this.arc = d3.svg.arc()
+        .innerRadius(this.opts.radius * this.opts.innerRadius)
+        .outerRadius(this.opts.radius);
+
+      // Paths
+      this.path = this.$svg.selectAll('path');
+      this.update();
+
+      // Set events
+      this._setEvents();
     }
-
-    // Pie layout
-    this.pie = d3.layout.pie()
-      .value(function(d) {
-        return d.value >= 0 ? d.value : 0;
-      })
-      .sort(null);
-
-    // Pie arc
-    this.arc = d3.svg.arc()
-      .innerRadius(this.opts.radius * this.opts.innerRadius)
-      .outerRadius(this.opts.radius);
-
-    // Paths
-    this.path = this.$svg.selectAll('path');
-    this.update();
-
-    // Set events
-    this._setEvents();
 
     return {
       series: {
@@ -50,7 +50,8 @@ var p_pie = PClass.extend({
       pie: {
         path: this.path,
         arc: this.arc
-      }
+      },
+      dataAvailable: this._dataAvailable
     };
   },
 
