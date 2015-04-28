@@ -13,6 +13,7 @@ var p_series = PClass.extend({
   }],
 
   initialize: function() {
+    if (!this._$scope.dataAvailable) {return;}
     var self = this;
 
     // Wrapper

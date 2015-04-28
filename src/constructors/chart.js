@@ -3,6 +3,7 @@ Charicharts.Chart = CClass.extend({
   modules: [
     p_svg,
     p_scale,
+    p_no_data_message,
     p_axes,
     p_series,
     p_trail

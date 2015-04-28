@@ -80,7 +80,7 @@ function h_getLocale(locale) {
       'shortDays': ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
       'months': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
       'shortMonths': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-      'nodata': ['No data available.']
+      'nodata': ['No data available']
     },
     'es': {
       'decimal': ',',
@@ -95,7 +95,7 @@ function h_getLocale(locale) {
       'shortDays': ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'],
       'months': ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
       'shortMonths': ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-      'nodata': ['No hay datos disponibles.']
+      'nodata': ['No hay datos disponibles']
     }
   })[locale || 'en'];
 }
@@ -663,6 +663,81 @@ var p_axes = PClass.extend({
 
 });
 
+var p_no_data_message = PClass.extend({
+
+  deps: [
+  ],
+
+  initialize: function() {
+    if (this._$scope.dataAvailable) {return;}
+    this.render();
+    return {};
+  },
+
+  /**
+   * Render no data message text inside a rectangle.
+   */
+  render: function() {
+    this.$svg.node().parentNode.style.background = '#F7F7F7';
+    this._renderGrid();
+
+    var width = h_getLocale(this.opts.locale)['nodata'][0].length * 12;
+    var height = 60;
+
+    var msg = this.$svg.append('g')
+      // Centered svg
+      .attr('transform', h_getTranslate(
+        -this.opts.margin.left + (this.opts.fullWidth) / 2,
+        -this.opts.margin.top + (this.opts.fullHeight) / 2
+      ));
+
+    msg.append('rect')
+      .attr('x', -width / 2)
+      .attr('y', -height/2)
+      .attr('width', width)
+      .attr('height', height)
+      .attr('fill', '#F7F7F7')
+      .style('shape-rendering', 'crispEdges')
+      .style('stroke', '#cf4634')
+      .style('stroke-width', 1);
+
+    msg.append('text')
+      .attr('y', 6)
+      .attr('font-size', 13)
+      .style('text-anchor', 'middle')
+      .style('fill', '#cf4634')
+      .text(h_getLocale(this.opts.locale)['nodata'][0].toUpperCase());
+
+
+    // Call onNoData callback if specified
+    this.opts.onNoData && this.opts.onNoData();
+  },
+
+  /**
+   * Renders grid on the background.
+   */
+  _renderGrid: function() {
+    var ticks = 12;
+    var separation = this.opts.fullHeight / (ticks-1) - 1/ticks;
+
+    this.grid = this.$svg.append('g')
+      .attr('transform', h_getTranslate(-this.opts.margin.left, -this.opts.margin.top))
+      .attr('class', 'bargrid');
+
+    for (var i = 0; i < ticks; i++) {
+      this.grid.append('line')
+        .attr('x1', 0)
+        .attr('x2', this.opts.fullWidth)
+        .attr('y1', separation*i)
+        .attr('y2', separation*i)
+        .style('shape-rendering', 'crispEdges')
+        .attr('stroke', '#e2e2e2');
+    }
+  },
+
+
+});
+
 /**
  * Percentage Bar
  * --------------
@@ -1097,13 +1172,13 @@ var p_scale = PClass.extend({
       }
     };
 
-    this.dataAvailable = true;
+    this._dataAvailable = true;
 
     this._updateScales();
     return {
       scale: this._status.scale,
       scaleUnits: this._status.scaleUnits,
-      dataAvailable: this.dataAvailable
+      dataAvailable: this._dataAvailable
     };
   },
 
@@ -1256,46 +1331,14 @@ var p_scale = PClass.extend({
     _.each(data, function(d,key) {
       dataFlattened[key] = _.flatten(d);
     });
-    // var data = _.flatten(_.map(this.data, function(d) {
-    //   // Single value
-    //   if (d.value) {
-    //     return [d.value];
-    //   // More than one values array for the series
-    //   } else if (d.data) {
-    //     return _.flatten(_.pluck(d.data, 'values'));
-    //   // Single values array for the series
-    //   } else if (d.values) {
-    //     return d.values;
-    //   // Error warn
-    //   } else {
-    //     console.warn('No present values on series provided.\n_setFlattenedData@scales.js');
-    //   }
-    // }));
 
     var firstUnit = units[0];
     var secondUnit = units[1];
     this._status.scaleUnits['y'] = firstUnit;
     this._status.scaleUnits['y2'] = secondUnit;
     this._dataFlattened = dataFlattened;
-    var dataAvailable = (dataFlattened[firstUnit] && dataFlattened[firstUnit].length>0) ||
-      (dataFlattened[secondUnit] && dataFlattened[secondUnit].length>0);
-
-    // No data message
-    if (!dataAvailable) {
-      this.$svg.append('text')
-        .attr('text-achor', 'middle')
-        // .attr('alignment-baseline', 'middle')
-        .attr('x', this.opts.width/2 - 10)
-        .attr('y', this.opts.height/2 - 8)
-        .attr('text-anchor', 'middle')
-        .style('fill', '#777')
-        .attr('font-size', '18px')
-        .text(h_getLocale(this.opts.locale)['nodata']);
-        this.dataAvailable = false;
-
-      this.opts.onNoData && this.opts.onNoData();
-      this.$svg.node().parentNode.style.background = '#f7f7f7';
-    }
+    this._dataAvailable = !!((dataFlattened[firstUnit] && dataFlattened[firstUnit].length>0) ||
+      (dataFlattened[secondUnit] && dataFlattened[secondUnit].length>0));
   }
 
 });
@@ -1315,6 +1358,7 @@ var p_series = PClass.extend({
   }],
 
   initialize: function() {
+    if (!this._$scope.dataAvailable) {return;}
     var self = this;
 
     // Wrapper
@@ -2130,6 +2174,7 @@ Charicharts.Chart = CClass.extend({
   modules: [
     p_svg,
     p_scale,
+    p_no_data_message,
     p_axes,
     p_series,
     p_trail
