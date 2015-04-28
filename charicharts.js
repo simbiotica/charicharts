@@ -704,6 +704,7 @@ var p_no_data_message = PClass.extend({
     msg.append('text')
       .attr('y', 6)
       .attr('font-size', 13)
+      .style('font-weight', 600)
       .style('text-anchor', 'middle')
       .style('fill', '#cf4634')
       .text(h_getLocale(this.opts.locale)['nodata'][0].toUpperCase());
