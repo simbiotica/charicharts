@@ -2,7 +2,8 @@ Charicharts.PercentageBar = CClass.extend({
 
   modules: [
     p_svg,
-    p_percentage_bar
+    p_percentage_bar,
+    p_no_data_message
   ],
 
   getInstanceProperties: function() {

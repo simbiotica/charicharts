@@ -771,19 +771,23 @@ var p_percentage_bar = PClass.extend({
 
 
   initialize: function() {
-    this.opts.gridTicks && this._renderGrid();
+    this._dataAvailable = true;
 
     switch(this.opts.orientation) {
       case 'vertical': this._renderVertical(); break;
       case 'horizontal': this._renderHorizontal(); break;}
 
-    this._setEvents();
+    if (this._dataAvailable) {
+      this.opts.gridTicks && this._renderGrid();
+      this._setEvents();
+    }
 
     return {
       bar: {
         path: this.path,
         triggerMouseover: _.bind(this.triggerMouseover, this)
-      }
+      },
+      dataAvailable: this._dataAvailable
     };
   },
 
@@ -830,6 +834,10 @@ var p_percentage_bar = PClass.extend({
 
   _renderVertical: function() {
     var total = d3.sum(_.pluck(this.data, 'value'));
+    if (total <= 0) {
+      this._dataAvailable = false;
+      return;
+    }
     var height = (this.opts.margin.top + this.opts.margin.bottom) * 100 / this.opts.height;
     var heightPercent = 100 - height;
     var y0 = 0;
@@ -866,7 +874,7 @@ var p_percentage_bar = PClass.extend({
   _renderGrid: function() {
     var separation = this.opts.fullHeight / (this.opts.gridTicks-1) - 1/this.opts.gridTicks;
 
-    this.grid = this.$svg.append('g')
+    this.grid = this.$svg.insert('g', ':first-child')
       .attr('transform', h_getTranslate(-this.opts.margin.left, -this.opts.margin.top))
       .attr('class', 'bargrid');
 
@@ -2324,7 +2332,8 @@ Charicharts.PercentageBar = CClass.extend({
 
   modules: [
     p_svg,
-    p_percentage_bar
+    p_percentage_bar,
+    p_no_data_message
   ],
 
   getInstanceProperties: function() {
