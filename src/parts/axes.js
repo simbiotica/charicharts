@@ -73,7 +73,20 @@ var p_axes = PClass.extend({
       .attr('height', 1)
       .attr('width', this.opts.fullWidth);
 
-    // this._renderXLabel('bottom');
+    if (this.data.length === 2) {
+      // Append top line indicator
+      model.el.append('circle')
+        .attr('cx', -this.opts.margin.left + 6)
+        .attr('cy', -11)
+        .attr('r', 4)
+        .style('fill', this.data[1].color);
+
+      model.el.append('circle')
+        .attr('cx', -this.opts.margin.left + 5)
+        .attr('cy', this.opts.height + 12)
+        .attr('r', 4)
+        .style('fill', this.data[0].color);
+    }
   },
 
   _renderBottom: function() {
@@ -202,7 +215,7 @@ var p_axes = PClass.extend({
       .attr('class', 'label')
       .attr('transform', h_getTranslate(orientation === 'left' ? -this.opts.margin.left :
         this.opts.width + this.opts.margin.right, this.opts.yaxis.textMarginTop))
-      .attr('y', -10)
+      .attr('y', -12)
       .attr('x', 0)
       .attr('text-anchor', orientation === 'left' ? 'start' : 'end')
       .text(label);
