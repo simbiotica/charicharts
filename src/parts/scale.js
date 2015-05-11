@@ -129,12 +129,12 @@ var p_scale = PClass.extend({
     var valDiff = extDiff * 0.05;
 
     if (extDiff <= 0) {
-      valDiff = 1;
+      valDiff = extent[1] * 0.05;
     }
 
     if (opt && !opt.min) {return extent;}
 
-    if (position === 'y' && fit) {
+    if ((position === 'y' || position === 'y2') && fit) {
       extent[0] = extent[0] - valDiff;
       extent[1] = extent[1] + valDiff;
     }
