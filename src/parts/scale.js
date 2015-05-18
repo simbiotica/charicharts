@@ -130,6 +130,8 @@ var p_scale = PClass.extend({
 
     if (extDiff <= 0) {
       valDiff = extent[1] * 0.05;
+    } else {
+      valDiff = 0;
     }
 
     if (opt && !opt.min) {return extent;}
