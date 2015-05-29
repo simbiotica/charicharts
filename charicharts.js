@@ -551,6 +551,17 @@ var p_axes = PClass.extend({
       .attr('class', 'yaxis left')
       .call(model.axis);
 
+    // Remove last tick if touches the top axis
+    if (this.opts.xaxis.top.enabled) {
+      try {
+        var lastTick = _.last(model.el.selectAll('.tick')[0]);
+        var lastTickY = Number(lastTick.attributes.transform.textContent.match(/,(.*)\)$/)[1]);
+        if (lastTickY < 20) {
+          lastTick.remove();
+        }
+      } catch (e) {}
+    }
+
     this._renderYLabel('left');
   },
 
